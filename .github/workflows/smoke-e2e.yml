@@ -1,0 +1,51 @@
+name: Smoke E2E (fixture)
+
+on:
+  workflow_dispatch:
+    inputs:
+      reasoning:
+        type: choice
+        options: [low, medium, high]
+        default: medium
+
+jobs:
+  smoke:
+    uses: ./.github/workflows/review-rfc.yml
+    with:
+      rfc_path: tests/fixtures/sample-rfc.md
+      criteria_path: tests/fixtures/eval-criteria.yaml
+      comment_mode: none
+      reasoning: ${{ inputs.reasoning }}
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+  verify-oracle:
+    needs: smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - name: Download merged report
+        uses: actions/download-artifact@v4
+        with:
+          name: merged-report
+          path: /tmp/merged/
+      - name: Verify oracle findings present
+        run: |
+          cat > /tmp/verify.ts <<'EOF'
+          import { readFileSync } from "node:fs";
+          const expected = JSON.parse(readFileSync("tests/fixtures/expected-findings.json", "utf-8"));
+          const md = readFileSync("/tmp/merged/merged-report.md", "utf-8");
+          const missing: string[] = [];
+          for (const must of expected.must_find) {
+            if (!md.includes(must.assertion_id)) missing.push(must.assertion_id);
+          }
+          if (missing.length > 0) {
+            console.error("MISSING required findings: " + missing.join(", "));
+            process.exit(1);
+          }
+          console.error("OK all must_find findings present in merged report");
+          EOF
+          bun /tmp/verify.ts
