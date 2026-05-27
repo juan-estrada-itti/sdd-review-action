@@ -1,0 +1,17 @@
+{
+  "name": "sdd-review-codex-critic",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "review": "bun run review-rfc.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "yaml": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "typescript": "^5.7.0"
+  }
+}
