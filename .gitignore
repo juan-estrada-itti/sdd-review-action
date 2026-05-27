@@ -1,0 +1,15 @@
+node_modules/
+bun.lockb
+.env
+.env.local
+.secrets
+*.log
+.DS_Store
+dist/
+build/
+coverage/
+
+# Action artifacts (downloaded JSONs during testing)
+**/claude-report.json
+**/codex-report.json
+**/merged-report.md
