@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+
+      - name: Install codex deps
+        working-directory: jobs/codex
+        run: bun install
+
+      - name: Install merge deps
+        working-directory: jobs/merge
+        run: bun install
+
+      - name: Install snapshot deps
+        working-directory: tests/snapshot
+        run: bun install
+
+      - name: Run codex tests
+        working-directory: jobs/codex
+        run: bun test
+
+      - name: Run merge tests
+        working-directory: jobs/merge
+        run: bun test
+
+      - name: Run snapshot tests
+        working-directory: tests/snapshot
+        run: bun test
+
+  workflow-syntax-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate YAML syntax
+        run: |
+          for f in .github/workflows/*.yml; do
+            python3 -c "import yaml; yaml.safe_load(open('$f'))" && echo "PASS $f"
+          done
