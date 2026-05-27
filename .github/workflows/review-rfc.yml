@@ -1,0 +1,224 @@
+name: SDD RFC adversarial review
+
+on:
+  workflow_call:
+    inputs:
+      rfc_path:
+        type: string
+        default: arch/RFC.md
+      criteria_path:
+        type: string
+        default: criteria/eval-criteria.yaml
+      comment_mode:
+        type: string
+        default: summary
+        # Supported: "summary" (post merged PR comment) | "none" (artifact only, no PR comment)
+      fail_on_p1:
+        type: boolean
+        default: false
+      reasoning:
+        type: string
+        default: medium
+      claude_model:
+        type: string
+        default: claude-sonnet-4-6
+      codex_model:
+        type: string
+        default: gpt-5
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
+      OPENAI_API_KEY:
+        required: true
+    outputs:
+      p1_count:
+        value: ${{ jobs.merge.outputs.p1_count }}
+      p2_count:
+        value: ${{ jobs.merge.outputs.p2_count }}
+      p3_count:
+        value: ${{ jobs.merge.outputs.p3_count }}
+      agreement_score:
+        value: ${{ jobs.merge.outputs.agreement_score }}
+      report_url:
+        value: ${{ jobs.merge.outputs.report_url }}
+
+jobs:
+  claude:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout consumer repo
+        uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+
+      - name: Checkout sdd-review-action (for prompt)
+        uses: actions/checkout@v4
+        with:
+          repository: ittidigital/sdd-review-action
+          ref: v1
+          path: .sdd-review-action
+
+      - name: Render prompt with paths
+        id: prompt
+        run: |
+          PROMPT=$(cat .sdd-review-action/prompts/adversarial-rfc.md \
+            | sed "s|{{RFC_PATH}}|${{ inputs.rfc_path }}|g" \
+            | sed "s|{{CRITERIA_PATH}}|${{ inputs.criteria_path }}|g")
+          echo "$PROMPT" > /tmp/prompt.md
+          echo "" >> /tmp/prompt.md
+          echo "After analysis, write the JSON output to /tmp/claude-report.json — do NOT post inline comments; the merger handles posting." >> /tmp/prompt.md
+          echo "prompt_path=/tmp/prompt.md" >> $GITHUB_OUTPUT
+
+      - name: Run Claude critic
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: ${{ steps.prompt.outputs.prompt_path }}
+          claude_args: |
+            --allowedTools "Read,Write,Bash(cat:*),Bash(ls:*)"
+            --model ${{ inputs.claude_model }}
+
+      - name: Ensure report exists (fallback if Claude failed)
+        if: always()
+        run: |
+          if [ ! -f /tmp/claude-report.json ]; then
+            echo '{"findings": [], "parse_error": "claude did not produce report"}' > /tmp/claude-report.json
+          fi
+
+      - name: Upload Claude report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-report
+          path: /tmp/claude-report.json
+
+  codex:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout consumer repo
+        uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+
+      - name: Checkout sdd-review-action
+        uses: actions/checkout@v4
+        with:
+          repository: ittidigital/sdd-review-action
+          ref: v1
+          path: .sdd-review-action
+
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+
+      - name: Install codex CLI
+        run: npm install -g @openai/codex@latest
+
+      - name: Configure codex
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          mkdir -p ~/.codex
+          echo "OPENAI_API_KEY=$OPENAI_API_KEY" > ~/.codex/.env
+
+      - name: Install critic deps
+        working-directory: .sdd-review-action/jobs/codex
+        run: bun install --frozen-lockfile
+
+      - name: Run Codex critic
+        run: |
+          bun run .sdd-review-action/jobs/codex/review-rfc.ts \
+            --rfc "${{ inputs.rfc_path }}" \
+            --criteria "${{ inputs.criteria_path }}" \
+            --prompt .sdd-review-action/prompts/adversarial-rfc.md \
+            --out /tmp/codex-report.json \
+            --reasoning "${{ inputs.reasoning }}" \
+            --model "${{ inputs.codex_model }}"
+
+      - name: Ensure report exists (fallback)
+        if: always()
+        run: |
+          if [ ! -f /tmp/codex-report.json ]; then
+            echo '{"findings": [], "parse_error": "codex did not produce report"}' > /tmp/codex-report.json
+          fi
+
+      - name: Upload Codex report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-report
+          path: /tmp/codex-report.json
+
+  merge:
+    needs: [claude, codex]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      p1_count: ${{ steps.run.outputs.p1_count }}
+      p2_count: ${{ steps.run.outputs.p2_count }}
+      p3_count: ${{ steps.run.outputs.p3_count }}
+      agreement_score: ${{ steps.run.outputs.agreement_score }}
+      report_url: ${{ steps.run.outputs.report_url }}
+    steps:
+      - name: Checkout sdd-review-action
+        uses: actions/checkout@v4
+        with:
+          repository: ittidigital/sdd-review-action
+          ref: v1
+          path: .sdd-review-action
+
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+
+      - name: Install merger deps
+        working-directory: .sdd-review-action/jobs/merge
+        run: bun install --frozen-lockfile
+
+      - name: Download Claude report
+        uses: actions/download-artifact@v4
+        with:
+          name: claude-report
+          path: /tmp/claude/
+
+      - name: Download Codex report
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-report
+          path: /tmp/codex/
+
+      - name: Run merger
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          POST_FLAG=""
+          if [ "${{ inputs.comment_mode }}" != "none" ] && [ -n "${{ github.event.pull_request.number }}" ]; then
+            POST_FLAG="--post-comment --pr ${{ github.event.pull_request.number }} --repo ${{ github.repository }}"
+          fi
+          bun run .sdd-review-action/jobs/merge/merge-cli.ts \
+            --claude /tmp/claude/claude-report.json \
+            --codex  /tmp/codex/codex-report.json \
+            --out-md   /tmp/merged-report.md \
+            --out-json /tmp/merged-summary.json \
+            $POST_FLAG
+
+      - name: Upload merged report
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-report
+          path: |
+            /tmp/merged-report.md
+            /tmp/merged-summary.json
+
+      - name: Fail on P1 (if enabled)
+        if: ${{ inputs.fail_on_p1 == true && steps.run.outputs.p1_count != '0' }}
+        run: |
+          echo "::error::SDD review found ${{ steps.run.outputs.p1_count }} P1 findings · failing as fail_on_p1=true"
+          exit 1
