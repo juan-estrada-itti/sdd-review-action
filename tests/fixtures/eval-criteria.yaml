@@ -1,0 +1,40 @@
+rfc_builder:
+  - id: rfc-no-vague-language
+    severity: P2
+    check: "RFC must not use 'rápido', 'escalable', 'robusto' without numeric targets"
+
+  - id: rfc-section-numbering-unique
+    severity: P2
+    check: "Each section heading number must be unique"
+
+  - id: rfc-open-questions-non-trivial
+    severity: P3
+    check: "Open questions section must list real questions, not '(none)'"
+
+  - id: rfc-schema-consistent-with-flow
+    severity: P1
+    check: "Any field referenced in flow descriptions must exist in the schema"
+
+  - id: rfc-adr-id-consistent
+    severity: P1
+    check: "ADR IDs cited in decisions must match the sequential numbering of ADRs in the RFC"
+
+  - id: rfc-perf-has-targets
+    severity: P2
+    check: "Performance section must include latency, throughput, or scale targets"
+
+  - id: rfc-security-mentions-authn
+    severity: P2
+    check: "Security section must address authentication and authorization"
+
+  - id: rfc-decision-has-rationale
+    severity: P2
+    check: "Each decision must include a rationale beyond the choice statement"
+
+  - id: rfc-decision-has-alternatives
+    severity: P3
+    check: "Each decision should mention at least one alternative considered"
+
+  - id: rfc-no-tbd
+    severity: P1
+    check: "RFC must not contain 'TBD' or 'TODO' placeholders"

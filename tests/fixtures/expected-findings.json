@@ -1,0 +1,11 @@
+{
+  "must_find": [
+    { "assertion_id": "rfc-schema-consistent-with-flow", "priority": "P1" },
+    { "assertion_id": "rfc-adr-id-consistent", "priority": "P1" },
+    { "assertion_id": "rfc-section-numbering-unique", "priority": "P2" },
+    { "assertion_id": "rfc-no-vague-language", "priority": "P2" },
+    { "assertion_id": "rfc-perf-has-targets", "priority": "P2" }
+  ],
+  "tolerable_extras": true,
+  "note": "Tolerable extras = critic may report additional findings beyond must_find without failing the test. Used because LLMs are non-deterministic."
+}
