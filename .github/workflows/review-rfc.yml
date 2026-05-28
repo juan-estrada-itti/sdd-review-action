@@ -132,52 +132,20 @@ jobs:
       - name: Install codex CLI
         run: npm install -g @openai/codex@latest
 
-      - name: Diagnose auth · OpenAI key validity + codex auth modes
+      - name: Authenticate codex with API key
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          echo "--- env check ---"
-          if [ -z "$OPENAI_API_KEY" ]; then
-            echo "FAIL: OPENAI_API_KEY is empty"; exit 1
-          fi
-          echo "OPENAI_API_KEY length: ${#OPENAI_API_KEY}"
-          echo "Prefix: ${OPENAI_API_KEY:0:7}..."
-
-          echo "--- raw API check (uses /v1/models, cheap, returns 200 if key works) ---"
-          HTTP=$(curl -s -o /tmp/api_resp.json -w "%{http_code}" \
-            -H "Authorization: Bearer $OPENAI_API_KEY" \
-            https://api.openai.com/v1/models)
-          echo "HTTP status: $HTTP"
-          if [ "$HTTP" != "200" ]; then
-            echo "FAIL: key does not auth to /v1/models"
-            head -c 500 /tmp/api_resp.json
-            exit 1
-          fi
-          echo "key works for /v1/models, count of models:"
-          jq '.data | length' /tmp/api_resp.json
-
-          echo "--- check /v1/responses access (the endpoint codex uses) ---"
-          HTTP2=$(curl -s -o /tmp/api_resp2.json -w "%{http_code}" \
-            -H "Authorization: Bearer $OPENAI_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{"model":"gpt-5","input":"test"}' \
-            https://api.openai.com/v1/responses)
-          echo "HTTP status on /v1/responses: $HTTP2"
-          head -c 500 /tmp/api_resp2.json
-
-          echo "--- codex CLI version + auth subcommands ---"
-          codex --version
-          codex --help 2>&1 | head -40 || true
-          codex login --help 2>&1 | head -20 || true
+          # Codex CLI v0.134 reads auth from its internal store, not from OPENAI_API_KEY env var.
+          # The `login --with-api-key` subcommand reads the key from stdin and persists it (lesson L-006).
+          printenv OPENAI_API_KEY | codex login --with-api-key
+          codex login status
 
       - name: Install critic deps
         working-directory: .sdd-review-action/jobs/codex
         run: bun install --frozen-lockfile
 
       - name: Run Codex critic
-        env:
-          # Pass OPENAI_API_KEY directly to the process · codex v0.134 reads from env, not ~/.codex/.env (lesson L-006)
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           # Only pass --model when consumer explicitly overrode the default; otherwise codex CLI picks its own (lesson L-003)
           MODEL_FLAG=""
