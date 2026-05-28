@@ -33,6 +33,11 @@ on:
         type: boolean
         default: true
         # Set to false to skip Codex critic (e.g. when OPENAI_API_KEY not available)
+      ref:
+        type: string
+        default: v1
+        # Git ref of sdd-review-action to checkout for prompt + scripts.
+        # Default `v1` (stable). Override to a SHA or branch when smoke-testing unreleased changes.
     secrets:
       ANTHROPIC_API_KEY:
         required: false
@@ -68,7 +73,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ittidigital/sdd-review-action
-          ref: v1
+          ref: ${{ inputs.ref }}
           path: .sdd-review-action
 
       - name: Render prompt with paths
@@ -118,7 +123,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ittidigital/sdd-review-action
-          ref: v1
+          ref: ${{ inputs.ref }}
           path: .sdd-review-action
 
       - uses: oven-sh/setup-bun@v2
@@ -181,7 +186,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ittidigital/sdd-review-action
-          ref: v1
+          ref: ${{ inputs.ref }}
           path: .sdd-review-action
 
       - uses: oven-sh/setup-bun@v2

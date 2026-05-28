@@ -65,7 +65,7 @@ test("parseCliArgs reads required args and defaults", () => {
   ]);
   expect(args.rfc).toBe("rfc.md");
   expect(args.reasoning).toBe("medium");
-  expect(args.model).toBe("gpt-5");
+  expect(args.model).toBeUndefined(); // no default; codex CLI picks its own (lesson L-003)
 });
 
 test("parseCliArgs respects --reasoning and --model overrides", () => {

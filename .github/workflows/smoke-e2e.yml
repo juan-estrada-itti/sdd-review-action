@@ -26,6 +26,7 @@ jobs:
       reasoning: ${{ inputs.reasoning }}
       enable_claude: ${{ inputs.enable_claude }}
       enable_codex: ${{ inputs.enable_codex }}
+      ref: ${{ github.sha }}
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

@@ -94,11 +94,11 @@ export type CliArgs = {
   prompt: string;
   out: string;
   reasoning: "low" | "medium" | "high";
-  model: string;
+  model?: string; // optional · when omitted, codex CLI uses its own default
 };
 
 export function parseCliArgs(argv: string[]): CliArgs {
-  const args: Partial<CliArgs> = { reasoning: "medium", model: "gpt-5" };
+  const args: Partial<CliArgs> = { reasoning: "medium" };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--rfc") args.rfc = argv[++i];
@@ -127,25 +127,25 @@ async function runCodexCritic(args: CliArgs): Promise<ReviewReport> {
   const codexArgs = [
     "exec",
     "-c", `model_reasoning_effort=${args.reasoning}`,
-    "-c", `model=${args.model}`,
+    ...(args.model ? ["-c", `model=${args.model}`] : []),
     renderedPrompt,
   ];
 
-  console.error(`[codex] invoking · model=${args.model} reasoning=${args.reasoning}`);
+  console.error(`[codex] invoking · model=${args.model ?? "<cli default>"} reasoning=${args.reasoning}`);
   const t0 = Date.now();
+  // stderr: "inherit" so codex's full error output streams directly to GH Actions logs
+  // without truncation (lesson L-002).
   const proc = Bun.spawn(["codex", ...codexArgs], {
     cwd: process.cwd(),
     stdout: "pipe",
-    stderr: "pipe",
+    stderr: "inherit",
   });
   const stdout = await new Response(proc.stdout).text();
-  const stderr = await new Response(proc.stderr).text();
   const exit = await proc.exited;
   const dt = ((Date.now() - t0) / 1000).toFixed(1);
-  console.error(`[codex] exit=${exit} · ${dt}s · stdout=${stdout.length}b stderr=${stderr.length}b`);
+  console.error(`[codex] exit=${exit} · ${dt}s · stdout=${stdout.length}b`);
 
   if (exit !== 0) {
-    console.error(`[codex] stderr (first 500): ${stderr.slice(0, 500)}`);
     return { findings: [], parse_error: `codex exited ${exit}`, raw_output: stdout };
   }
   return parseCodexOutput(stdout);
