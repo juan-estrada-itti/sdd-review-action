@@ -129,8 +129,14 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
 
-      - name: Install codex CLI
-        run: npm install -g @openai/codex@latest
+      - name: Install codex CLI + sandbox dependencies
+        run: |
+          npm install -g @openai/codex@latest
+          # Codex sandbox uses bubblewrap to isolate file system access.
+          # The bundled bubblewrap lacks the right perms in GH runners → install system one (lesson L-007).
+          sudo apt-get update -qq
+          sudo apt-get install -y bubblewrap
+          which bwrap && bwrap --version
 
       - name: Authenticate codex with API key
         env:
