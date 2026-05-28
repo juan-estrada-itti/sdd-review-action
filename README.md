@@ -67,6 +67,7 @@ The merged report will indicate the unavailable critic and `agreement_score` wil
 
 ## Docs
 
-- [docs/AGENTES-Y-HARNESS.md](docs/AGENTES-Y-HARNESS.md) — qué agentes corren por debajo y con qué harness (lectura recomendada para entender la arquitectura)
+- **[docs/COMO-FUNCIONA.md](docs/COMO-FUNCIONA.md)** — **empezá acá** · explicación para equipos técnicos desde primeros principios (15-20 min)
+- [docs/AGENTES-Y-HARNESS.md](docs/AGENTES-Y-HARNESS.md) — arquitectura técnica detallada de los agentes y sus harnesses
 - [docs/PROMPT.md](docs/PROMPT.md) — el prompt adversarial y por qué está escrito así
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — cómo iterar localmente y releasing
