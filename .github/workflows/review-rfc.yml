@@ -132,26 +132,27 @@ jobs:
       - name: Install codex CLI
         run: npm install -g @openai/codex@latest
 
-      - name: Configure codex
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          mkdir -p ~/.codex
-          echo "OPENAI_API_KEY=$OPENAI_API_KEY" > ~/.codex/.env
-
       - name: Install critic deps
         working-directory: .sdd-review-action/jobs/codex
         run: bun install --frozen-lockfile
 
       - name: Run Codex critic
+        env:
+          # Pass OPENAI_API_KEY directly to the process · codex v0.134 reads from env, not ~/.codex/.env (lesson L-006)
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
+          # Only pass --model when consumer explicitly overrode the default; otherwise codex CLI picks its own (lesson L-003)
+          MODEL_FLAG=""
+          if [ "${{ inputs.codex_model }}" != "gpt-5" ]; then
+            MODEL_FLAG="--model ${{ inputs.codex_model }}"
+          fi
           bun run .sdd-review-action/jobs/codex/review-rfc.ts \
             --rfc "${{ inputs.rfc_path }}" \
             --criteria "${{ inputs.criteria_path }}" \
             --prompt .sdd-review-action/prompts/adversarial-rfc.md \
             --out /tmp/codex-report.json \
             --reasoning "${{ inputs.reasoning }}" \
-            --model "${{ inputs.codex_model }}"
+            $MODEL_FLAG
 
       - name: Ensure report exists (fallback)
         if: always()
