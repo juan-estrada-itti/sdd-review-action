@@ -72,7 +72,7 @@ jobs:
       - name: Checkout sdd-review-action (for prompt)
         uses: actions/checkout@v4
         with:
-          repository: ittidigital/sdd-review-action
+          repository: juan-estrada-itti/sdd-review-action
           ref: ${{ inputs.ref }}
           path: .sdd-review-action
 
@@ -122,7 +122,7 @@ jobs:
       - name: Checkout sdd-review-action
         uses: actions/checkout@v4
         with:
-          repository: ittidigital/sdd-review-action
+          repository: juan-estrada-itti/sdd-review-action
           ref: ${{ inputs.ref }}
           path: .sdd-review-action
 
@@ -194,7 +194,7 @@ jobs:
       - name: Checkout sdd-review-action
         uses: actions/checkout@v4
         with:
-          repository: ittidigital/sdd-review-action
+          repository: juan-estrada-itti/sdd-review-action
           ref: ${{ inputs.ref }}
           path: .sdd-review-action
 
