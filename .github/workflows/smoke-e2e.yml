@@ -7,6 +7,14 @@ on:
         type: choice
         options: [low, medium, high]
         default: medium
+      enable_claude:
+        type: boolean
+        default: true
+        description: Run the Claude critic (requires ANTHROPIC_API_KEY secret)
+      enable_codex:
+        type: boolean
+        default: true
+        description: Run the Codex critic (requires OPENAI_API_KEY secret)
 
 jobs:
   smoke:
@@ -16,6 +24,8 @@ jobs:
       criteria_path: tests/fixtures/eval-criteria.yaml
       comment_mode: none
       reasoning: ${{ inputs.reasoning }}
+      enable_claude: ${{ inputs.enable_claude }}
+      enable_codex: ${{ inputs.enable_codex }}
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
