@@ -147,18 +147,14 @@ jobs:
 
       - name: Run Codex critic
         run: |
-          # Only pass --model when consumer explicitly overrode the default; otherwise codex CLI picks its own (lesson L-003)
-          MODEL_FLAG=""
-          if [ "${{ inputs.codex_model }}" != "gpt-5" ]; then
-            MODEL_FLAG="--model ${{ inputs.codex_model }}"
-          fi
+          # ALWAYS pass --model from the workflow input · codex CLI default may not be available to the user's project (lesson L-003 v2)
           bun run .sdd-review-action/jobs/codex/review-rfc.ts \
             --rfc "${{ inputs.rfc_path }}" \
             --criteria "${{ inputs.criteria_path }}" \
             --prompt .sdd-review-action/prompts/adversarial-rfc.md \
             --out /tmp/codex-report.json \
             --reasoning "${{ inputs.reasoning }}" \
-            $MODEL_FLAG
+            --model "${{ inputs.codex_model }}"
 
       - name: Ensure report exists (fallback)
         if: always()
