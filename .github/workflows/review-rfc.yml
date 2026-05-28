@@ -25,11 +25,19 @@ on:
       codex_model:
         type: string
         default: gpt-5
+      enable_claude:
+        type: boolean
+        default: true
+        # Set to false to skip Claude critic (e.g. when ANTHROPIC_API_KEY not available)
+      enable_codex:
+        type: boolean
+        default: true
+        # Set to false to skip Codex critic (e.g. when OPENAI_API_KEY not available)
     secrets:
       ANTHROPIC_API_KEY:
-        required: true
+        required: false
       OPENAI_API_KEY:
-        required: true
+        required: false
     outputs:
       p1_count:
         value: ${{ jobs.merge.outputs.p1_count }}
@@ -44,6 +52,7 @@ on:
 
 jobs:
   claude:
+    if: ${{ inputs.enable_claude }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -97,6 +106,7 @@ jobs:
           path: /tmp/claude-report.json
 
   codex:
+    if: ${{ inputs.enable_codex }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -182,16 +192,28 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Download Claude report
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: claude-report
           path: /tmp/claude/
 
       - name: Download Codex report
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: codex-report
           path: /tmp/codex/
+
+      - name: Ensure both report stubs exist (handles skipped jobs)
+        run: |
+          mkdir -p /tmp/claude /tmp/codex
+          if [ ! -f /tmp/claude/claude-report.json ]; then
+            echo '{"findings": [], "parse_error": "claude critic disabled or skipped"}' > /tmp/claude/claude-report.json
+          fi
+          if [ ! -f /tmp/codex/codex-report.json ]; then
+            echo '{"findings": [], "parse_error": "codex critic disabled or skipped"}' > /tmp/codex/codex-report.json
+          fi
 
       - name: Run merger
         id: run

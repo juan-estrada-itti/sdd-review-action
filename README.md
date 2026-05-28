@@ -34,11 +34,30 @@ jobs:
 | `reasoning` | `medium` | `low` / `medium` / `high` |
 | `claude_model` | `claude-sonnet-4-6` | Override Claude model |
 | `codex_model` | `gpt-5` | Override Codex model |
+| `enable_claude` | `true` | Set `false` to skip Claude critic (e.g. no `ANTHROPIC_API_KEY`) |
+| `enable_codex` | `true` | Set `false` to skip Codex critic (e.g. no `OPENAI_API_KEY`) |
 
 ## Secrets
 
-- `ANTHROPIC_API_KEY` (required)
-- `OPENAI_API_KEY` (required)
+- `ANTHROPIC_API_KEY` — required only when `enable_claude: true` (default)
+- `OPENAI_API_KEY` — required only when `enable_codex: true` (default)
+
+### Running with only one critic
+
+If you only have one of the two API keys, set the corresponding `enable_*: false`:
+
+```yaml
+jobs:
+  review:
+    uses: ittidigital/sdd-review-action/.github/workflows/review-rfc.yml@v1
+    with:
+      rfc_path: arch/RFC.md
+      enable_claude: false   # only run Codex
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+```
+
+The merged report will indicate the unavailable critic and `agreement_score` will be `null` (no second opinion to compare against).
 
 ## Outputs
 
