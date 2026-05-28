@@ -65,5 +65,8 @@ The merged report will indicate the unavailable critic and `agreement_score` wil
 - `agreement_score` (0-1, or null if one critic failed)
 - `report_url`
 
-See [docs/PROMPT.md](docs/PROMPT.md) for the adversarial prompt and rationale.
-See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for how to iterate locally.
+## Docs
+
+- [docs/AGENTES-Y-HARNESS.md](docs/AGENTES-Y-HARNESS.md) — qué agentes corren por debajo y con qué harness (lectura recomendada para entender la arquitectura)
+- [docs/PROMPT.md](docs/PROMPT.md) — el prompt adversarial y por qué está escrito así
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — cómo iterar localmente y releasing
