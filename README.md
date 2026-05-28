@@ -71,3 +71,4 @@ The merged report will indicate the unavailable critic and `agreement_score` wil
 - [docs/AGENTES-Y-HARNESS.md](docs/AGENTES-Y-HARNESS.md) — arquitectura técnica detallada de los agentes y sus harnesses
 - [docs/PROMPT.md](docs/PROMPT.md) — el prompt adversarial y por qué está escrito así
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — cómo iterar localmente y releasing
+- [docs/WORKSHOP-1H.md](docs/WORKSHOP-1H.md) — guía facilitador-ready de 1h para onboardar equipos (metodología Stanford d.school + Karpathy)
