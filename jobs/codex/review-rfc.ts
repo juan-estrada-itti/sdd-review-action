@@ -127,6 +127,9 @@ async function runCodexCritic(args: CliArgs): Promise<ReviewReport> {
   const codexArgs = [
     "exec",
     "-c", `model_reasoning_effort=${args.reasoning}`,
+    // Disable codex's internal sandbox · GH Actions runners are already isolated
+    // and bwrap fails with loopback errors inside containers (lesson L-008).
+    "-c", `sandbox_mode="danger-full-access"`,
     ...(args.model ? ["-c", `model=${args.model}`] : []),
     renderedPrompt,
   ];
